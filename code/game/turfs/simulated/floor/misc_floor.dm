@@ -3,6 +3,7 @@
 	icon_state = "plaque"
 	desc = "\"This is a plaque in honour of our comrades on the G4407 Stations. Hopefully TG4407 model can live up to your fame and fortune.\" Scratched in beneath that is a crude image of a meteor and a spaceman. The spaceman is laughing. The meteor is exploding."
 	floor_tile = /obj/item/stack/tile/plasteel
+	tiled_dirt = FALSE
 
 /turf/open/floor/vault
 	icon_state = "rockvault"
@@ -44,20 +45,16 @@
 	on = FALSE
 
 /turf/open/floor/circuit/airless
-	initial_gas_mix = "TEMP=2.7"
-
-/turf/open/floor/circuit/killroom
-	name = "Killroom Floor"
-	initial_gas_mix = "n2=500;TEMP=80"
+	initial_gas_mix = AIRLESS_ATMOS
 
 /turf/open/floor/circuit/telecomms
-	initial_gas_mix = "n2=100;TEMP=80"
+	initial_gas_mix = TCOMMS_ATMOS
 
 /turf/open/floor/circuit/telecomms/mainframe
-	name = "Mainframe Base"
+	name = "mainframe base"
 
 /turf/open/floor/circuit/telecomms/server
-	name = "Server Base"
+	name = "server base"
 
 /turf/open/floor/circuit/green
 	icon_state = "gcircuit"
@@ -75,13 +72,13 @@
 	floor_tile = /obj/item/stack/tile/circuit/green/anim
 
 /turf/open/floor/circuit/green/airless
-	initial_gas_mix = "TEMP=2.7"
+	initial_gas_mix = AIRLESS_ATMOS
 
 /turf/open/floor/circuit/green/telecomms
-	initial_gas_mix = "n2=100;TEMP=80"
+	initial_gas_mix = TCOMMS_ATMOS
 
 /turf/open/floor/circuit/green/telecomms/mainframe
-	name = "Mainframe Base"
+	name = "mainframe base"
 
 /turf/open/floor/circuit/red
 	icon_state = "rcircuit"
@@ -99,10 +96,10 @@
 	floor_tile = /obj/item/stack/tile/circuit/red/anim
 
 /turf/open/floor/circuit/red/airless
-	initial_gas_mix = "TEMP=2.7"
+	initial_gas_mix = AIRLESS_ATMOS
 
 /turf/open/floor/circuit/red/telecomms
-	initial_gas_mix = "n2=100;TEMP=80"
+	initial_gas_mix = TCOMMS_ATMOS
 
 /turf/open/floor/pod
 	name = "pod floor"
@@ -137,97 +134,6 @@
 	icon_state = "floor"
 	floor_tile = /obj/item/stack/tile/plasteel
 
-//Clockwork floor: Slowly heals toxin damage on nearby servants.
-/turf/open/floor/clockwork
-	name = "clockwork floor"
-	desc = "Tightly-pressed brass tiles. They emit minute vibration."
-	icon_state = "plating"
-	baseturfs = /turf/open/floor/clockwork
-	var/uses_overlay = TRUE
-	var/obj/effect/clockwork/overlay/floor/realappearence
-
-/turf/open/floor/clockwork/Bless() //Who needs holy blessings when you have DADDY RATVAR?
-	return
-
-/turf/open/floor/clockwork/Initialize()
-	. = ..()
-	if(uses_overlay)
-		new /obj/effect/temp_visual/ratvar/floor(src)
-		new /obj/effect/temp_visual/ratvar/beam(src)
-		realappearence = new /obj/effect/clockwork/overlay/floor(src)
-		realappearence.linked = src
-
-/turf/open/floor/clockwork/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	if(uses_overlay && realappearence)
-		QDEL_NULL(realappearence)
-	return ..()
-
-/turf/open/floor/clockwork/ReplaceWithLattice()
-	. = ..()
-	for(var/obj/structure/lattice/L in src)
-		L.ratvar_act()
-
-/turf/open/floor/clockwork/Entered(atom/movable/AM)
-	..()
-	START_PROCESSING(SSobj, src)
-
-/turf/open/floor/clockwork/process()
-	if(!healservants())
-		STOP_PROCESSING(SSobj, src)
-
-/turf/open/floor/clockwork/proc/healservants()
-	for(var/mob/living/L in src)
-		if(L.stat == DEAD)
-			continue
-		. = 1
-		if(!is_servant_of_ratvar(L) || !L.toxloss)
-			continue
-
-		var/image/I = new('icons/effects/effects.dmi', src, "heal", ABOVE_MOB_LAYER) //fake a healing glow for servants
-		I.appearance_flags = RESET_COLOR
-		I.color = "#5A6068"
-		I.pixel_x = rand(-12, 12)
-		I.pixel_y = rand(-9, 0)
-		var/list/viewing = list()
-		for(var/mob/M in viewers(src))
-			if(M.client && (is_servant_of_ratvar(M) || isobserver(M) || M.stat == DEAD))
-				viewing += M.client
-		flick_overlay(I, viewing, 8)
-		L.adjustToxLoss(-3, TRUE, TRUE)
-
-/turf/open/floor/clockwork/try_replace_tile(obj/item/stack/tile/T, mob/user, params)
-	return
-
-/turf/open/floor/clockwork/crowbar_act(mob/living/user, obj/item/I)
-	if(baseturfs == type)
-		return TRUE
-	user.visible_message("<span class='notice'>[user] begins slowly prying up [src]...</span>", "<span class='notice'>You begin painstakingly prying up [src]...</span>")
-	if(I.use_tool(src, user, 70, volume=80))
-		user.visible_message("<span class='notice'>[user] pries up [src]!</span>", "<span class='notice'>You pry up [src]!</span>")
-		make_plating()
-	return TRUE
-
-/turf/open/floor/clockwork/make_plating()
-	new /obj/item/stack/tile/brass(src)
-	return ..()
-
-/turf/open/floor/clockwork/narsie_act()
-	..()
-	if(istype(src, /turf/open/floor/clockwork)) //if we haven't changed type
-		var/previouscolor = color
-		color = "#960000"
-		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
-
-/turf/open/floor/clockwork/reebe
-	name = "cogplate"
-	desc = "Warm brass plating. You can feel it gently vibrating, as if machinery is on the other side."
-	icon_state = "reebe"
-	baseturfs = /turf/open/floor/clockwork/reebe
-	uses_overlay = FALSE
-	planetary_atmos = TRUE
-
 /turf/open/floor/bluespace
 	slowdown = -1
 	icon_state = "bluespace"
@@ -243,8 +149,17 @@
 
 
 /turf/open/floor/bronze
-	name = "clockwork floor"
+	name = "bronze floor"
 	desc = "Some heavy bronze tiles."
 	icon = 'icons/obj/clockwork_objects.dmi'
 	icon_state = "clockwork_floor"
 	floor_tile = /obj/item/stack/tile/bronze
+
+/turf/open/floor/white
+	name = "white floor"
+	desc = "A tile in a pure white color."
+	icon_state = "pure_white"
+
+/turf/open/floor/black
+	name = "black floor"
+	icon_state = "black"

@@ -23,14 +23,14 @@
 		user.visible_message("<span class='warning'>[user] pulls [src]'s lever with a glint in [user.p_their()] eyes!</span>", "<span class='warning'>You feel a draining as you pull the lever, but you \
 		know it'll be worth it.</span>")
 	icon_state = "slots2"
-	playsound(src, 'sound/lavaland/cursed_slot_machine.ogg', 50, 0)
+	playsound(src, 'sound/lavaland/cursed_slot_machine.ogg', 50, FALSE)
 	addtimer(CALLBACK(src, .proc/determine_victor, user), 50)
 
 /obj/structure/cursed_slot_machine/proc/determine_victor(mob/living/user)
 	icon_state = "slots1"
 	obj_flags &= ~IN_USE
 	if(prob(win_prob))
-		playsound(src, 'sound/lavaland/cursed_slot_machine_jackpot.ogg', 50, 0)
+		playsound(src, 'sound/lavaland/cursed_slot_machine_jackpot.ogg', 50, FALSE)
 		new/obj/structure/cursed_money(get_turf(src))
 		if(user)
 			to_chat(user, "<span class='boldwarning'>You've hit jackpot. Laughter echoes around you as your reward appears in the machine's place.</span>")
@@ -98,6 +98,13 @@
 	desc = "Pride cometh before the..."
 	icon_state = "magic_mirror"
 
+/obj/structure/mirror/magic/pride/New()
+	for(var/speciestype in subtypesof(/datum/species))
+		var/datum/species/S = speciestype
+		if(initial(S.changesource_flags) & MIRROR_PRIDE)
+			choosable_races += initial(S.id)
+	..()
+
 /obj/structure/mirror/magic/pride/curse(mob/user)
 	user.visible_message("<span class='danger'><B>The ground splits beneath [user] as [user.p_their()] hand leaves the mirror!</B></span>", \
 	"<span class='notice'>Perfect. Much better! Now <i>nobody</i> will be able to resist yo-</span>")
@@ -108,7 +115,7 @@
 	if (levels.len)
 		dest = locate(T.x, T.y, pick(levels))
 
-	T.ChangeTurf(/turf/open/chasm)
+	T.ChangeTurf(/turf/open/chasm, flags = CHANGETURF_INHERIT_AIR)
 	var/turf/open/chasm/C = T
 	C.set_target(dest)
 	C.drop(user)
@@ -129,7 +136,7 @@
 	hitsound = 'sound/weapons/bladeslice.ogg'
 
 /obj/item/kitchen/knife/envy/afterattack(atom/movable/AM, mob/living/carbon/human/user, proximity)
-	..()
+	. = ..()
 	if(!proximity)
 		return
 	if(!istype(user))
@@ -142,4 +149,4 @@
 			user.updateappearance(mutcolor_update=1)
 			user.domutcheck()
 			user.visible_message("<span class='warning'>[user]'s appearance shifts into [H]'s!</span>", \
-			"<span class='boldannounce'>They think they're <i>sooo</i> much better than you. Not anymore, they won't.</span>")
+			"<span class='boldannounce'>[H.p_they(TRUE)] think[H.p_s()] [H.p_theyre()] <i>sooo</i> much better than you. Not anymore, [H.p_they()] won't.</span>")

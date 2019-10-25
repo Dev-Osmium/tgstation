@@ -15,8 +15,7 @@
 
 // Run all strings to be used in an SQL query through this proc first to properly escape out injection attempts.
 /proc/sanitizeSQL(t)
-	var/sqltext = SSdbcore.Quote("[t]");
-	return copytext(sqltext, 2, lentext(sqltext));//Quote() adds quotes around input, we already do that
+	return SSdbcore.Quote("[t]")
 
 /proc/format_table_name(table as text)
 	return CONFIG_GET(string/feedback_tableprefix) + table
@@ -47,6 +46,16 @@
 
 /proc/sanitize_filename(t)
 	return sanitize_simple(t, list("\n"="", "\t"="", "/"="", "\\"="", "?"="", "%"="", "*"="", ":"="", "|"="", "\""="", "<"="", ">"=""))
+
+///returns nothing with an alert instead of the message if it contains something in the ic filter, and sanitizes normally if the name is fine. It returns nothing so it backs out of the input the same way as if you had entered nothing.
+/proc/sanitize_name(t,list/repl_chars = null)
+	if(CHAT_FILTER_CHECK(t))
+		alert("You cannot set a name that contains a word prohibited in IC chat!")
+		return ""
+	if(t == "space" || t == "floor" || t == "wall" || t == "r-wall" || t == "monkey" || t == "unknown" || t == "inactive ai")	//prevents these common metagamey names
+		alert("Invalid name.")
+		return ""
+	return sanitize(t)
 
 //Runs byond's sanitization proc along-side sanitize_simple
 /proc/sanitize(t,list/repl_chars = null)
@@ -698,7 +707,7 @@ GLOBAL_LIST_INIT(binary, list("0","1"))
 	var/macro = lowertext(copytext(string, next_backslash + 1, next_space))
 	var/rest = next_backslash > leng ? "" : copytext(string, next_space + 1)
 
-	//See http://www.byond.com/docs/ref/info.html#/DM/text/macros
+	//See https://secure.byond.com/docs/ref/info.html#/DM/text/macros
 	switch(macro)
 		//prefixes/agnostic
 		if("the")
@@ -766,4 +775,64 @@ GLOBAL_LIST_INIT(binary, list("0","1"))
 			return "twelfth"
 		else
 			return "[number]\th"
-		
+
+
+/proc/random_capital_letter()
+	return uppertext(pick(GLOB.alphabet))
+
+/proc/unintelligize(message)
+	var/prefix=copytext(message,1,2)
+	if(prefix == ";")
+		message = copytext(message,2)
+	else if(prefix in list(":","#"))
+		prefix += copytext(message,2,3)
+		message = copytext(message,3)
+	else
+		prefix=""
+
+	var/list/words = splittext(message," ")
+	var/list/rearranged = list()
+	for(var/i=1;i<=words.len;i++)
+		var/cword = pick(words)
+		words.Remove(cword)
+		var/suffix = copytext(cword,length(cword)-1,length(cword))
+		while(length(cword)>0 && suffix in list(".",",",";","!",":","?"))
+			cword  = copytext(cword,1              ,length(cword)-1)
+			suffix = copytext(cword,length(cword)-1,length(cword)  )
+		if(length(cword))
+			rearranged += cword
+	message = "[prefix][jointext(rearranged," ")]"
+	. = message
+
+
+/proc/readable_corrupted_text(text)
+	var/list/corruption_options = list("..", "£%", "~~\"", "!!", "*", "^", "$!", "-", "}", "?")
+	var/corrupted_text = ""
+
+	// Have every letter have a chance of creating corruption on either side
+	// Small chance of letters being removed in place of corruption - still overall readable
+	for(var/letter_index = 1; letter_index <= length(text); letter_index++)
+		var/letter = text[letter_index]
+
+		if (prob(15))
+			corrupted_text += pick(corruption_options)
+
+		if (prob(95))
+			corrupted_text += letter
+		else
+			corrupted_text += pick(corruption_options)
+
+	if (prob(15))
+		corrupted_text += pick(corruption_options)
+
+	return corrupted_text
+
+#define is_alpha(X) ((text2ascii(X) <= 122) && (text2ascii(X) >= 97))
+#define is_digit(X) ((length(X) == 1) && (length(text2num(X)) == 1))
+
+//json decode that will return null on parse error instead of runtiming.
+/proc/safe_json_decode(data)
+	try
+		return json_decode(data)
+	catch
+		return

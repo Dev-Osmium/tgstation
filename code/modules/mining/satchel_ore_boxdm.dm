@@ -9,22 +9,24 @@
 	density = TRUE
 	pressure_resistance = 5*ONE_ATMOSPHERE
 
-/obj/structure/ore_box/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/ore))
-		user.transferItemToLoc(I, src)
-	else if(istype(I, /obj/item/storage))
-		var/obj/item/storage/S = I
-		for(var/obj/item/stack/ore/O in S.contents)
-			S.remove_from_storage(O, src) //This will move the item to this item's contents
-		to_chat(user, "<span class='notice'>You empty the ore in [S] into \the [src].</span>")
+/obj/structure/ore_box/attackby(obj/item/W, mob/user, params)
+	if (istype(W, /obj/item/stack/ore))
+		user.transferItemToLoc(W, src)
+	else if(SEND_SIGNAL(W, COMSIG_CONTAINS_STORAGE))
+		SEND_SIGNAL(W, COMSIG_TRY_STORAGE_TAKE_TYPE, /obj/item/stack/ore, src)
+		to_chat(user, "<span class='notice'>You empty the ore in [W] into \the [src].</span>")
 	else
 		return ..()
 
+/obj/structure/ore_box/ComponentInitialize()
+	. = ..()
+	AddComponent(/datum/component/rad_insulation, 0.01) //please datum mats no more cancer
+
 /obj/structure/ore_box/crowbar_act(mob/living/user, obj/item/I)
 	if(I.use_tool(src, user, 50, volume=50))
-		user.visible_message("[user] pries \the [src] apart.",
+		user.visible_message("<span class='notice'>[user] pries \the [src] apart.</span>",
 			"<span class='notice'>You pry apart \the [src].</span>",
-			"<span class='italics'>You hear splitting wood.</span>")
+			"<span class='hear'>You hear splitting wood.</span>")
 		deconstruct(TRUE, user)
 	return TRUE
 

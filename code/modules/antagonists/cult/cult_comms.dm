@@ -20,7 +20,9 @@
 	var/input = stripped_input(usr, "Please choose a message to tell to the other acolytes.", "Voice of Blood", "")
 	if(!input || !IsAvailable())
 		return
-
+	if(CHAT_FILTER_CHECK(input))
+		to_chat(usr, "<span class='warning'>You cannot send a message that contains a word prohibited in IC chat!</span>")
+		return
 	cultist_commune(usr, input)
 
 /datum/action/innate/cult/comm/proc/cultist_commune(mob/living/user, message)
@@ -45,7 +47,7 @@
 			var/link = FOLLOW_LINK(M, user)
 			to_chat(M, "[link] [my_message]")
 
-	log_talk(user,"CULT:[key_name(user)] : [message]",LOGSAY)
+	user.log_talk(message, LOG_SAY, tag="cult")
 
 /datum/action/innate/cult/comm/spirit
 	name = "Spiritual Communion"
@@ -79,7 +81,7 @@
 	return ..()
 
 /datum/action/innate/cult/mastervote/Activate()
-	var/choice = alert(owner, "The mantle of leadership is a heavy. Success in this role requires an expert level of communication and experience. Are you sure?",, "Yes", "No")
+	var/choice = alert(owner, "The mantle of leadership is heavy. Success in this role requires an expert level of communication and experience. Are you sure?",, "Yes", "No")
 	if(choice == "Yes" && IsAvailable())
 		var/datum/antagonist/cult/C = owner.mind.has_antag_datum(/datum/antagonist/cult,TRUE)
 		pollCultists(owner,C.cult_team)
@@ -94,7 +96,7 @@
 			B.current.update_action_buttons_icon()
 			if(!B.current.incapacitated())
 				SEND_SOUND(B.current, 'sound/hallucinations/im_here1.ogg')
-				to_chat(B.current, "<span class='cultlarge'>Acolyte [Nominee] has asserted that they are worthy of leading the cult. A vote will be called shortly.</span>")
+				to_chat(B.current, "<span class='cultlarge'>Acolyte [Nominee] has asserted that [Nominee.p_theyre()] worthy of leading the cult. A vote will be called shortly.</span>")
 	sleep(100)
 	var/list/asked_cultists = list()
 	for(var/datum/mind/B in team.members)
@@ -167,19 +169,19 @@
 					switch(i)
 						if(1)
 							new /obj/effect/temp_visual/cult/sparks(mobloc, B.current.dir)
-							playsound(mobloc, "sparks", 50, 1)
+							playsound(mobloc, "sparks", 50, TRUE)
 						if(2)
 							new /obj/effect/temp_visual/dir_setting/cult/phase/out(mobloc, B.current.dir)
-							playsound(mobloc, "sparks", 75, 1)
+							playsound(mobloc, "sparks", 75, TRUE)
 						if(3)
 							new /obj/effect/temp_visual/dir_setting/cult/phase(mobloc, B.current.dir)
-							playsound(mobloc, "sparks", 100, 1)
+							playsound(mobloc, "sparks", 100, TRUE)
 						if(4)
-							playsound(mobloc, 'sound/magic/exit_blood.ogg', 100, 1)
+							playsound(mobloc, 'sound/magic/exit_blood.ogg', 100, TRUE)
 							if(B.current != owner)
 								var/turf/final = pick(destinations)
-								if(istype(B.current.loc, /obj/item/device/soulstone))
-									var/obj/item/device/soulstone/S = B.current.loc
+								if(istype(B.current.loc, /obj/item/soulstone))
+									var/obj/item/soulstone/S = B.current.loc
 									S.release_shades(owner)
 								B.current.setDir(SOUTH)
 								new /obj/effect/temp_visual/cult/blood(final)
@@ -196,16 +198,16 @@
 /datum/action/innate/cult/master/finalreck/proc/chant(chant_number)
 	switch(chant_number)
 		if(1)
-			owner.say("C'arta forbici!", language = /datum/language/common)
+			owner.say("C'arta forbici!", language = /datum/language/common, forced = "cult invocation")
 		if(2)
-			owner.say("Pleggh e'ntrath!", language = /datum/language/common)
-			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 50, 1)
+			owner.say("Pleggh e'ntrath!", language = /datum/language/common, forced = "cult invocation")
+			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 50, TRUE)
 		if(3)
-			owner.say("Barhah hra zar'garis!", language = /datum/language/common)
-			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 75, 1)
+			owner.say("Barhah hra zar'garis!", language = /datum/language/common, forced = "cult invocation")
+			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 75, TRUE)
 		if(4)
-			owner.say("N'ath reth sh'yro eth d'rekkathnor!!!", language = /datum/language/common)
-			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 100, 1)
+			owner.say("N'ath reth sh'yro eth d'rekkathnor!!!", language = /datum/language/common, forced = "cult invocation")
+			playsound(get_turf(owner),'sound/magic/clockwork/narsie_attack.ogg', 100, TRUE)
 
 /datum/action/innate/cult/master/cultmark
 	name = "Mark Target"
@@ -215,7 +217,7 @@
 	var/cooldown = 0
 	var/base_cooldown = 1200
 
-/datum/action/innate/cult/master/cultmark/New()
+/datum/action/innate/cult/master/cultmark/New(Target)
 	CM = new()
 	CM.attached_action = src
 	..()
@@ -299,7 +301,7 @@
 	name = "Mark a Blood Target for the Cult"
 	desc = "Marks a target for the entire cult to track."
 
-/datum/action/innate/cult/master/cultmark/IsAvailable()
+/datum/action/innate/cult/master/cultmark/ghost/IsAvailable()
 	if(istype(owner, /mob/dead/observer) && iscultist(owner.mind.current))
 		return TRUE
 	else
@@ -334,7 +336,7 @@
 		if(cooldown>world.time)
 			reset_blood_target(C.cult_team)
 			to_chat(owner, "<span class='cultbold'>You have cleared the cult's blood target!</span>")
-			qdel(C.cult_team.blood_target_reset_timer)
+			deltimer(C.cult_team.blood_target_reset_timer)
 			return
 		else
 			to_chat(owner, "<span class='cultbold'>The cult has already designated a target!</span>")
@@ -342,10 +344,7 @@
 	if(cooldown>world.time)
 		to_chat(owner, "<span class='cultbold'>You aren't ready to place another blood mark yet!</span>")
 		return
-	if(owner.orbiting && owner.orbiting.orbiting)
-		target = owner.orbiting.orbiting
-	else
-		target = get_turf(owner)
+	target = owner.orbiting?.parent || get_turf(owner)
 	if(!target)
 		return
 	C.cult_team.blood_target = target
@@ -457,7 +456,6 @@
 			new /obj/effect/temp_visual/cult/sparks(get_turf(target), ranged_ability_user.dir)
 			attached_action.throwing = FALSE
 			attached_action.cooldown = world.time + attached_action.base_cooldown
-			remove_mousepointer(ranged_ability_user.client)
 			remove_ranged_ability("<span class='cult'>A pulse of blood magic surges through you as you shift [attached_action.throwee] through time and space.</span>")
 			caller.update_action_buttons_icon()
 			addtimer(CALLBACK(caller, /mob.proc/update_action_buttons_icon), attached_action.base_cooldown)

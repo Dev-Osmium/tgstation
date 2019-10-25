@@ -31,7 +31,7 @@
 	poster_structure = null
 	. = ..()
 
-// These icon_states may be overriden, but are for mapper's convinence
+// These icon_states may be overridden, but are for mapper's convinence
 /obj/item/poster/random_contraband
 	name = "random contraband poster"
 	poster_type = /obj/structure/sign/poster/contraband/random
@@ -60,13 +60,14 @@
 
 /obj/structure/sign/poster/Initialize()
 	. = ..()
-	addtimer(CALLBACK(src, /datum.proc/AddComponent, /datum/component/beauty, 75), 0)
 	if(random_basetype)
 		randomise(random_basetype)
 	if(!ruined)
 		original_name = name // can't use initial because of random posters
 		name = "poster - [name]"
 		desc = "A large piece of space-resistant printed paper. [desc]"
+	
+	addtimer(CALLBACK(src, /datum.proc/AddComponent, /datum/component/beauty, 300), 0)
 
 /obj/structure/sign/poster/proc/randomise(base_type)
 	var/list/poster_types = subtypesof(base_type)
@@ -88,7 +89,7 @@
 
 
 /obj/structure/sign/poster/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/wirecutters))
+	if(I.tool_behaviour == TOOL_WIRECUTTER)
 		I.play_tool_sound(src, 100)
 		if(ruined)
 			to_chat(user, "<span class='notice'>You remove the remnants of the poster.</span>")
@@ -103,8 +104,8 @@
 		return
 	if(ruined)
 		return
-	visible_message("[user] rips [src] in a single, decisive motion!" )
-	playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
+	visible_message("<span class='notice'>[user] rips [src] in a single, decisive motion!</span>" )
+	playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
 
 	var/obj/structure/sign/poster/ripped/R = new(loc)
 	R.pixel_y = pixel_y
@@ -127,7 +128,7 @@
 
 	// Deny placing posters on currently-diagonal walls, although the wall may change in the future.
 	if (smooth & SMOOTH_DIAGONAL)
-		for (var/O in our_overlays)
+		for (var/O in overlays)
 			var/image/I = O
 			if (copytext(I.icon_state, 1, 3) == "d-")
 				return
@@ -150,7 +151,7 @@
 	flick("poster_being_set",D)
 	D.forceMove(src)
 	qdel(P)	//delete it now to cut down on sanity checks afterwards. Agouri's code supports rerolling it anyway
-	playsound(D.loc, 'sound/items/poster_being_created.ogg', 100, 1)
+	playsound(D.loc, 'sound/items/poster_being_created.ogg', 100, TRUE)
 
 	if(do_after(user, PLACE_SPEED, target=src))
 		if(!D || QDELETED(D))
@@ -409,6 +410,18 @@
 	desc = "A poster advertising a movie about some masked men."
 	icon_state = "poster44"
 
+//annoyingly, poster45 is in another file.
+
+/obj/structure/sign/poster/contraband/free_key
+	name = "Free Syndicate Encryption Key"
+	desc = "A poster about traitors begging for more."
+	icon_state = "poster46"
+
+/obj/structure/sign/poster/contraband/bountyhunters
+	name = "Bounty Hunters"
+	desc = "A poster advertising bounty hunting services. \"I hear you got a problem.\""
+	icon_state = "poster47"
+
 /obj/structure/sign/poster/official
 	poster_item_name = "motivational poster"
 	poster_item_desc = "An official Nanotrasen-issued poster to foster a compliant and obedient workforce. It comes with state-of-the-art adhesive backing, for easy pinning to any vertical surface."
@@ -547,7 +560,7 @@
 
 /obj/structure/sign/poster/official/anniversary_vintage_reprint
 	name = "50th Anniversary Vintage Reprint"
-	desc = "A reprint of a poster from 2505, commemorating the 50th Aniversery of Nanoposters Manufacturing, a subsidary of Nanotrasen."
+	desc = "A reprint of a poster from 2505, commemorating the 50th Anniversary of Nanoposters Manufacturing, a subsidiary of Nanotrasen."
 	icon_state = "poster26_legit"
 
 /obj/structure/sign/poster/official/fruit_bowl

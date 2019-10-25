@@ -1,19 +1,20 @@
 /obj/structure/fireaxecabinet
 	name = "fire axe cabinet"
 	desc = "There is a small label that reads \"For Emergency use only\" along with details for safe use of the axe. As if."
-	var/obj/item/twohanded/fireaxe/fireaxe = new/obj/item/twohanded/fireaxe
 	icon = 'icons/obj/wallmounts.dmi'
 	icon_state = "fireaxe"
 	anchored = TRUE
 	density = FALSE
 	armor = list("melee" = 50, "bullet" = 20, "laser" = 0, "energy" = 100, "bomb" = 10, "bio" = 100, "rad" = 100, "fire" = 90, "acid" = 50)
+	max_integrity = 150
+	integrity_failure = 0.33
 	var/locked = TRUE
 	var/open = FALSE
-	max_integrity = 150
-	integrity_failure = 50
+	var/obj/item/twohanded/fireaxe/fireaxe
 
 /obj/structure/fireaxecabinet/Initialize()
 	. = ..()
+	fireaxe = new
 	update_icon()
 
 /obj/structure/fireaxecabinet/Destroy()
@@ -22,9 +23,9 @@
 	return ..()
 
 /obj/structure/fireaxecabinet/attackby(obj/item/I, mob/user, params)
-	if(iscyborg(user) || istype(I, /obj/item/device/multitool))
+	if(iscyborg(user) || I.tool_behaviour == TOOL_MULTITOOL)
 		toggle_lock(user)
-	else if(istype(I, /obj/item/weldingtool) && user.a_intent == INTENT_HELP && !broken)
+	else if(I.tool_behaviour == TOOL_WELDER && user.a_intent == INTENT_HELP && !broken)
 		if(obj_integrity < max_integrity)
 			if(!I.tool_start_check(user, amount=2))
 				return
@@ -68,11 +69,11 @@
 	switch(damage_type)
 		if(BRUTE)
 			if(broken)
-				playsound(loc, 'sound/effects/hit_on_shattered_glass.ogg', 90, 1)
+				playsound(loc, 'sound/effects/hit_on_shattered_glass.ogg', 90, TRUE)
 			else
-				playsound(loc, 'sound/effects/glasshit.ogg', 90, 1)
+				playsound(loc, 'sound/effects/glasshit.ogg', 90, TRUE)
 		if(BURN)
-			playsound(src.loc, 'sound/items/welder.ogg', 100, 1)
+			playsound(src.loc, 'sound/items/welder.ogg', 100, TRUE)
 
 /obj/structure/fireaxecabinet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
 	if(open)
@@ -85,7 +86,7 @@
 	if(!broken && !(flags_1 & NODECONSTRUCT_1))
 		update_icon()
 		broken = TRUE
-		playsound(src, 'sound/effects/glassbr3.ogg', 100, 1)
+		playsound(src, 'sound/effects/glassbr3.ogg', 100, TRUE)
 		new /obj/item/shard(loc)
 		new /obj/item/shard(loc)
 
@@ -165,8 +166,8 @@
 		add_overlay("glass_raised")
 
 /obj/structure/fireaxecabinet/proc/toggle_lock(mob/user)
-	to_chat(user, "<span class = 'caution'> Resetting circuitry...</span>")
-	playsound(src, 'sound/machines/locktoggle.ogg', 50, 1)
+	to_chat(user, "<span class='caution'>Resetting circuitry...</span>")
+	playsound(src, 'sound/machines/locktoggle.ogg', 50, TRUE)
 	if(do_after(user, 20, target = src))
 		to_chat(user, "<span class='caution'>You [locked ? "disable" : "re-enable"] the locking modules.</span>")
 		locked = !locked

@@ -36,7 +36,7 @@
 
 /obj/structure/glowshroom/examine(mob/user)
 	. = ..()
-	to_chat(user, "This is a [generation]\th generation [name]!")
+	. += "This is a [generation]\th generation [name]!"
 
 /obj/structure/glowshroom/Destroy()
 	if(myseed)
@@ -78,7 +78,7 @@
 				pixel_x = -32
 		icon_state = "[base_icon_state][rand(1,3)]"
 	else //if on the floor, glowshroom on-floor sprite
-		icon_state = "[base_icon_state]f"
+		icon_state = base_icon_state
 
 	addtimer(CALLBACK(src, .proc/Spread), delay)
 
@@ -163,7 +163,7 @@
 
 /obj/structure/glowshroom/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	if(damage_type == BURN && damage_amount)
-		playsound(src.loc, 'sound/items/welder.ogg', 100, 1)
+		playsound(src.loc, 'sound/items/welder.ogg', 100, TRUE)
 
 /obj/structure/glowshroom/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300)

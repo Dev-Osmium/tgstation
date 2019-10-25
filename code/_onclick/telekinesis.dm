@@ -15,7 +15,7 @@
 /atom/proc/attack_tk(mob/user)
 	if(user.stat || !tkMaxRangeCheck(user, src))
 		return
-	new /obj/effect/temp_visual/telekinesis(loc)
+	new /obj/effect/temp_visual/telekinesis(get_turf(src))
 	user.UnarmedAttack(src,0) // attack_hand, attack_paw, etc
 	add_hiddenprint(user)
 	return
@@ -70,14 +70,15 @@
 	desc = "Magic"
 	icon = 'icons/obj/magic.dmi'//Needs sprites
 	icon_state = "2"
-	flags_1 = NOBLUDGEON_1 | ABSTRACT_1 | DROPDEL_1
+	item_flags = NOBLUDGEON | ABSTRACT | DROPDEL
 	//item_state = null
 	w_class = WEIGHT_CLASS_GIGANTIC
 	layer = ABOVE_HUD_LAYER
 	plane = ABOVE_HUD_PLANE
 
-	var/atom/movable/focus = null
-	var/mob/living/carbon/tk_user = null
+	var/atom/movable/focus
+	var/mutable_appearance/focus_overlay
+	var/mob/living/carbon/tk_user
 
 /obj/item/tk_grab/Initialize()
 	. = ..()
@@ -85,6 +86,9 @@
 
 /obj/item/tk_grab/Destroy()
 	STOP_PROCESSING(SSfastprocess, src)
+	focus = null
+	focus_overlay = null
+	tk_user = null
 	return ..()
 
 /obj/item/tk_grab/process()
@@ -99,10 +103,16 @@
 
 //stops TK grabs being equipped anywhere but into hands
 /obj/item/tk_grab/equipped(mob/user, slot)
-	if(slot == slot_hands)
+	. = ..()
+	if(slot == SLOT_HANDS)
 		return
 	qdel(src)
-	return
+
+/obj/item/tk_grab/examine(user)
+	if (focus)
+		return focus.examine(user)
+	else
+		return ..()
 
 /obj/item/tk_grab/attack_self(mob/user)
 	if(!focus)
@@ -114,6 +124,7 @@
 	update_icon()
 
 /obj/item/tk_grab/afterattack(atom/target, mob/living/carbon/user, proximity, params)//TODO: go over this
+	. = ..()
 	if(!target || !user)
 		return
 
@@ -144,7 +155,7 @@
 /proc/tkMaxRangeCheck(mob/user, atom/target)
 	var/d = get_dist(user, target)
 	if(d > TK_MAXRANGE)
-		to_chat(user, "<span class ='warning'>Your mind won't reach that far.</span>")
+		to_chat(user, "<span class='warning'>Your mind won't reach that far.</span>")
 		return
 	return TRUE
 
@@ -174,15 +185,16 @@
 	new /obj/effect/temp_visual/telekinesis(get_turf(focus))
 
 /obj/item/tk_grab/update_icon()
-	cut_overlays()
+	. = ..()
+
+	if(focus_overlay)
+		cut_overlay(focus_overlay)
+		focus_overlay = null
 	if(focus)
-		var/old_layer = focus.layer
-		var/old_plane = focus.plane
-		focus.layer = layer+0.01
-		focus.plane = ABOVE_HUD_PLANE
-		add_overlay(focus) //this is kind of ick, but it's better than using icon()
-		focus.layer = old_layer
-		focus.plane = old_plane
+		focus_overlay = new(focus)
+		focus_overlay.layer = layer + 0.01
+		focus_overlay.plane = ABOVE_HUD_PLANE
+		add_overlay(focus_overlay)
 
 /obj/item/tk_grab/suicide_act(mob/user)
 	user.visible_message("<span class='suicide'>[user] is using [user.p_their()] telekinesis to choke [user.p_them()]self! It looks like [user.p_theyre()] trying to commit suicide!</span>")

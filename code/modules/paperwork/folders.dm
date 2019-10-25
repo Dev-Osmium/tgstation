@@ -6,9 +6,9 @@
 	w_class = WEIGHT_CLASS_SMALL
 	pressure_resistance = 2
 	resistance_flags = FLAMMABLE
-	
+
 /obj/item/folder/suicide_act(mob/living/user)
-	user.visible_message("<span class='suicide'>[user] begins filing an imaginary death warrent! It looks like [user.p_theyre()] trying to commit suicide!</span>")
+	user.visible_message("<span class='suicide'>[user] begins filing an imaginary death warrant! It looks like [user.p_theyre()] trying to commit suicide!</span>")
 	return OXYLOSS
 
 /obj/item/folder/blue
@@ -44,7 +44,14 @@
 		if(!user.is_literate())
 			to_chat(user, "<span class='notice'>You scribble illegibly on the cover of [src]!</span>")
 			return
-		var/n_name = copytext(sanitize(input(user, "What would you like to label the folder?", "Folder Labelling", null) as text), 1, MAX_NAME_LEN)
+
+		var/inputvalue = input(user, "What would you like to label the folder?", "Folder Labelling", null) as text|null
+		
+		if (isnull(inputvalue))
+			return
+		
+		var/n_name = copytext(sanitize(inputvalue), 1, MAX_NAME_LEN)
+		
 		if(user.canUseTopic(src, BE_CLOSE))
 			name = "folder[(n_name ? " - '[n_name]'" : null)]"
 
@@ -67,14 +74,14 @@
 	if(usr.contents.Find(src))
 
 		if(href_list["remove"])
-			var/obj/item/I = locate(href_list["remove"])
-			if(istype(I) && I.loc == src)
+			var/obj/item/I = locate(href_list["remove"]) in src
+			if(istype(I))
 				I.forceMove(usr.loc)
 				usr.put_in_hands(I)
 
 		if(href_list["read"])
-			var/obj/item/I = locate(href_list["read"])
-			if(istype(I) && I.loc == src)
+			var/obj/item/I = locate(href_list["read"]) in src
+			if(istype(I))
 				usr.examinate(I)
 
 		//Update everything

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/atmospherics/pipes/meter.dmi'
 	icon_state = "meterX"
 	layer = GAS_PUMP_LAYER
-	anchored = TRUE
 	power_channel = ENVIRON
 	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
@@ -41,19 +40,22 @@
 	return ..()
 
 /obj/machinery/meter/proc/reattach_to_layer()
+	var/obj/machinery/atmospherics/candidate
 	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
 		if(pipe.piping_layer == target_layer)
-			target = pipe
-			setAttachLayer(pipe.piping_layer)
-			break
+			candidate = pipe
+			if(pipe.level == 2)
+				break
+	if(candidate)
+		target = candidate
+		setAttachLayer(candidate.piping_layer)
 
-/obj/machinery/meter/proc/setAttachLayer(var/new_layer)
+/obj/machinery/meter/proc/setAttachLayer(new_layer)
 	target_layer = new_layer
-	pixel_x = (new_layer - PIPING_LAYER_DEFAULT) * PIPING_LAYER_P_X
-	pixel_y = (new_layer - PIPING_LAYER_DEFAULT) * PIPING_LAYER_P_Y
+	PIPING_LAYER_DOUBLE_SHIFT(src, target_layer)
 
 /obj/machinery/meter/process_atmos()
-	if(!target)
+	if(!(target?.flags_1 & INITIALIZED_1))
 		icon_state = "meterX"
 		return 0
 
@@ -108,16 +110,17 @@
 		. = "The connect error light is blinking."
 
 /obj/machinery/meter/examine(mob/user)
-	..()
-	to_chat(user, status())
+	. = ..()
+	. += status()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/I)
+	..()
 	to_chat(user, "<span class='notice'>You begin to unfasten \the [src]...</span>")
 	if (I.use_tool(src, user, 40, volume=50))
 		user.visible_message(
 			"[user] unfastens \the [src].",
 			"<span class='notice'>You unfasten \the [src].</span>",
-			"<span class='italics'>You hear ratchet.</span>")
+			"<span class='hear'>You hear ratchet.</span>")
 		deconstruct()
 	return TRUE
 
@@ -141,6 +144,5 @@
 //	why are you yelling?
 /obj/machinery/meter/turf
 
-/obj/machinery/meter/turf/Initialize()
-	. = ..()
+/obj/machinery/meter/turf/reattach_to_layer()
 	target = loc

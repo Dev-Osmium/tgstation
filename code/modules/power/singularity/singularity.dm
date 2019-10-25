@@ -7,6 +7,7 @@
 	icon_state = "singularity_s1"
 	anchored = TRUE
 	density = TRUE
+	move_resist = INFINITY
 	layer = MASSIVE_OBJ_LAYER
 	light_range = 6
 	appearance_flags = 0
@@ -81,6 +82,20 @@
 /obj/singularity/blob_act(obj/structure/blob/B)
 	return
 
+/obj/singularity/attack_tk(mob/user)
+	if(iscarbon(user))
+		var/mob/living/carbon/C = user
+		C.visible_message("<span class='danger'>[C]'s head begins to collapse in on itself!</span>", "<span class='userdanger'>Your head feels like it's collapsing in on itself! This was really not a good idea!</span>", "<span class='hear'>You hear something crack and explode in gore.</span>")
+		var/turf/T = get_turf(C)
+		for(var/i in 1 to 3)
+			C.apply_damage(30, BRUTE, BODY_ZONE_HEAD)
+			new /obj/effect/gibspawner/generic(T, C)
+			sleep(1)
+		C.ghostize()
+		var/obj/item/bodypart/head/rip_u = C.get_bodypart(BODY_ZONE_HEAD)
+		rip_u.dismember(BURN) //nice try jedi
+		qdel(rip_u)
+
 /obj/singularity/ex_act(severity, target)
 	switch(severity)
 		if(1)
@@ -97,16 +112,17 @@
 	return
 
 
-/obj/singularity/bullet_act(obj/item/projectile/P)
-	return 0 //Will there be an impact? Who knows.  Will we see it? No.
+/obj/singularity/bullet_act(obj/projectile/P)
+	qdel(P)
+	return BULLET_ACT_HIT //Will there be an impact? Who knows.  Will we see it? No.
 
 
-/obj/singularity/Collide(atom/A)
+/obj/singularity/Bump(atom/A)
 	consume(A)
 	return
 
 
-/obj/singularity/CollidedWith(atom/movable/AM)
+/obj/singularity/Bumped(atom/movable/AM)
 	consume(AM)
 
 
@@ -128,11 +144,12 @@
 
 
 /obj/singularity/proc/admin_investigate_setup()
+	var/turf/T = get_turf(src)
 	last_warning = world.time
 	var/count = locate(/obj/machinery/field/containment) in urange(30, src, 1)
 	if(!count)
-		message_admins("A singulo has been created without containment fields active ([x],[y],[z])",1)
-	investigate_log("was created. [count?"":"<font color='red'>No containment fields were active</font>"]", INVESTIGATE_SINGULO)
+		message_admins("A singulo has been created without containment fields active at [ADMIN_VERBOSEJMP(T)].")
+	investigate_log("was created at [AREACOORD(T)]. [count?"":"<font color='red'>No containment fields were active</font>"]", INVESTIGATE_SINGULO)
 
 /obj/singularity/proc/dissipate()
 	if(!dissipate)
@@ -272,7 +289,7 @@
 /obj/singularity/proc/consume(atom/A)
 	var/gain = A.singularity_act(current_size, src)
 	src.energy += gain
-	if(istype(A, /obj/machinery/power/supermatter_shard) && !consumedSupermatter)
+	if(istype(A, /obj/machinery/power/supermatter_crystal) && !consumedSupermatter)
 		desc = "[initial(desc)] It glows fiercely with inner fire."
 		name = "supermatter-charged [initial(name)]"
 		consumedSupermatter = 1
@@ -367,8 +384,8 @@
 		var/obj/machinery/field/generator/G = locate(/obj/machinery/field/generator) in T
 		if(G && G.active)
 			return 0
-	else if(locate(/obj/machinery/shieldwallgen) in T)
-		var/obj/machinery/shieldwallgen/S = locate(/obj/machinery/shieldwallgen) in T
+	else if(locate(/obj/machinery/power/shieldwallgen) in T)
+		var/obj/machinery/power/shieldwallgen/S = locate(/obj/machinery/power/shieldwallgen) in T
 		if(S && S.active)
 			return 0
 	return 1
@@ -429,3 +446,14 @@
 	explosion(src.loc,(dist),(dist*2),(dist*4))
 	qdel(src)
 	return(gain)
+
+/obj/singularity/deadchat_controlled
+	move_self = FALSE
+
+/obj/singularity/deadchat_controlled/Initialize(mapload, starting_energy)
+	. = ..()
+	AddComponent(/datum/component/deadchat_control, DEMOCRACY_MODE, list(
+	 "up" = CALLBACK(GLOBAL_PROC, .proc/_step, src, NORTH),
+	 "down" = CALLBACK(GLOBAL_PROC, .proc/_step, src, SOUTH),
+	 "left" = CALLBACK(GLOBAL_PROC, .proc/_step, src, WEST),
+	 "right" = CALLBACK(GLOBAL_PROC, .proc/_step, src, EAST)))

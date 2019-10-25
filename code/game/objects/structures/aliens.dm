@@ -24,12 +24,12 @@
 	switch(damage_type)
 		if(BRUTE)
 			if(damage_amount)
-				playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
+				playsound(loc, 'sound/effects/attackblob.ogg', 100, TRUE)
 			else
-				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
+				playsound(src, 'sound/weapons/tap.ogg', 50, TRUE)
 		if(BURN)
 			if(damage_amount)
-				playsound(loc, 'sound/items/welder.ogg', 100, 1)
+				playsound(loc, 'sound/items/welder.ogg', 100, TRUE)
 
 /*
  * Generic alien stuff, not related to the purple lizards but still alien-like
@@ -53,7 +53,7 @@
 	name = "resin"
 	desc = "Looks like some kind of thick resin."
 	icon = 'icons/obj/smooth_structures/alien/resin_wall.dmi'
-	icon_state = "resin"
+	icon_state = "smooth"
 	density = TRUE
 	opacity = 1
 	anchored = TRUE
@@ -64,9 +64,9 @@
 	CanAtmosPass = ATMOS_PASS_DENSITY
 
 
-/obj/structure/alien/resin/New(location)
-	..()
-	air_update_turf(1)
+/obj/structure/alien/resin/Initialize(mapload)
+	. = ..()
+	air_update_turf(TRUE)
 
 /obj/structure/alien/resin/Move()
 	var/turf/T = loc
@@ -77,7 +77,7 @@
 	name = "resin wall"
 	desc = "Thick resin solidified into a wall."
 	icon = 'icons/obj/smooth_structures/alien/resin_wall.dmi'
-	icon_state = "wall0"	//same as resin, but consistency ho!
+	icon_state = "smooth"	//same as resin, but consistency ho!
 	resintype = "wall"
 	canSmoothWith = list(/obj/structure/alien/resin/wall, /obj/structure/alien/resin/membrane)
 
@@ -88,7 +88,7 @@
 	name = "resin membrane"
 	desc = "Resin just thin enough to let light pass through."
 	icon = 'icons/obj/smooth_structures/alien/resin_membrane.dmi'
-	icon_state = "membrane0"
+	icon_state = "smooth"
 	opacity = 0
 	max_integrity = 160
 	resintype = "membrane"
@@ -115,6 +115,7 @@
 	anchored = TRUE
 	density = FALSE
 	layer = TURF_LAYER
+	plane = FLOOR_PLANE
 	icon_state = "weeds"
 	max_integrity = 15
 	canSmoothWith = list(/obj/structure/alien/weeds, /turf/closed/wall)
@@ -217,7 +218,7 @@
 	density = FALSE
 	anchored = TRUE
 	max_integrity = 100
-	integrity_failure = 5
+	integrity_failure = 0.05
 	var/status = GROWING	//can be GROWING, GROWN or BURST; all mutually exclusive
 	layer = MOB_LAYER
 	var/obj/item/clothing/mask/facehugger/child
@@ -231,7 +232,7 @@
 		addtimer(CALLBACK(src, .proc/Grow), rand(MIN_GROWTH_TIME, MAX_GROWTH_TIME))
 	proximity_monitor = new(src, status == GROWN ? 1 : 0)
 	if(status == BURST)
-		obj_integrity = integrity_failure
+		obj_integrity = integrity_failure * max_integrity
 
 /obj/structure/alien/egg/update_icon()
 	..()
@@ -257,7 +258,7 @@
 		switch(status)
 			if(BURST)
 				to_chat(user, "<span class='notice'>You clear the hatched egg.</span>")
-				playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
+				playsound(loc, 'sound/effects/attackblob.ogg', 100, TRUE)
 				qdel(src)
 				return
 			if(GROWING)

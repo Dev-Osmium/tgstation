@@ -6,7 +6,6 @@
 	name = "R&D Device"
 	icon = 'icons/obj/machines/research.dmi'
 	density = TRUE
-	anchored = TRUE
 	use_power = IDLE_POWER_USE
 	var/busy = FALSE
 	var/hacked = FALSE
@@ -43,10 +42,11 @@
 		if(linked_console)
 			disconnect_console()
 		return
-	if(exchange_parts(user, O))
-		return
 	if(default_deconstruction_crowbar(O))
 		return
+	if(panel_open && is_wire_tool(O))
+		wires.interact(user)
+		return TRUE
 	if(is_refillable() && O.is_drainable())
 		return FALSE //inserting reagents into the machine
 	if(Insert_Item(O, user))
@@ -68,6 +68,7 @@
 		to_chat(user, "<span class='warning'>You can't load [src] while it's opened!</span>")
 		return FALSE
 	if(disabled)
+		to_chat(user, "<span class='warning'>The insertion belts of [src] won't engage!</span>")
 		return FALSE
 	if(requires_console && !linked_console)
 		to_chat(user, "<span class='warning'>[src] must be linked to an R&D console first!</span>")
@@ -92,14 +93,14 @@
 		loaded_item.forceMove(loc)
 	..()
 
-/obj/machinery/rnd/proc/AfterMaterialInsert(type_inserted, id_inserted, amount_inserted)
+/obj/machinery/rnd/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
 	var/stack_name
-	if(ispath(type_inserted, /obj/item/stack/ore/bluespace_crystal))
+	if(istype(item_inserted, /obj/item/stack/ore/bluespace_crystal))
 		stack_name = "bluespace"
 		use_power(MINERAL_MATERIAL_AMOUNT / 10)
 	else
-		var/obj/item/stack/S = type_inserted
-		stack_name = initial(S.name)
+		var/obj/item/stack/S = item_inserted
+		stack_name = S.name
 		use_power(min(1000, (amount_inserted / 100)))
 	add_overlay("protolathe_[stack_name]")
 	addtimer(CALLBACK(src, /atom/proc/cut_overlay, "protolathe_[stack_name]"), 10)

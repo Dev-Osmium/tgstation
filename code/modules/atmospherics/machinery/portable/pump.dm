@@ -8,6 +8,8 @@
 	name = "portable air pump"
 	icon_state = "psiphon:0"
 	density = TRUE
+	ui_x = 420
+	ui_y = 415
 
 	var/on = FALSE
 	var/direction = PUMP_OUT
@@ -58,6 +60,9 @@
 		air_update_turf() // Update the environment if needed.
 
 /obj/machinery/portable_atmospherics/pump/emp_act(severity)
+	. = ..()
+	if(. & EMP_PROTECT_SELF)
+		return
 	if(is_operational())
 		if(prob(50 / severity))
 			on = !on
@@ -65,7 +70,6 @@
 			direction = PUMP_OUT
 		pump.target_pressure = rand(0, 100 * ONE_ATMOSPHERE)
 		update_icon()
-	..()
 
 /obj/machinery/portable_atmospherics/pump/replace_tank(mob/living/user, close_valve)
 	. = ..()
@@ -82,7 +86,7 @@
 														datum/tgui/master_ui = null, datum/ui_state/state = GLOB.physical_state)
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
-		ui = new(user, src, ui_key, "portable_pump", name, 420, 415, master_ui, state)
+		ui = new(user, src, ui_key, "portable_pump", name, ui_x, ui_y, master_ui, state)
 		ui.open()
 
 /obj/machinery/portable_atmospherics/pump/ui_data()
@@ -112,9 +116,8 @@
 				var/plasma = air_contents.gases[/datum/gas/plasma]
 				var/n2o = air_contents.gases[/datum/gas/nitrous_oxide]
 				if(n2o || plasma)
-					var/area/A = get_area(src)
-					message_admins("[ADMIN_LOOKUPFLW(usr)] turned on a pump that contains [n2o ? "N2O" : ""][n2o && plasma ? " & " : ""][plasma ? "Plasma" : ""] at [A][ADMIN_JMP(src)]")
-					log_admin("[key_name(usr)] turned on a pump that contains [n2o ? "N2O" : ""][n2o && plasma ? " & " : ""][plasma ? "Plasma" : ""] at [A][COORD(src)]")
+					message_admins("[ADMIN_LOOKUPFLW(usr)] turned on a pump that contains [n2o ? "N2O" : ""][n2o && plasma ? " & " : ""][plasma ? "Plasma" : ""] at [ADMIN_VERBOSEJMP(src)]")
+					log_admin("[key_name(usr)] turned on a pump that contains [n2o ? "N2O" : ""][n2o && plasma ? " & " : ""][plasma ? "Plasma" : ""] at [AREACOORD(src)]")
 			else if(on && direction == PUMP_OUT)
 				investigate_log("[key_name(usr)] started a transfer into [holding].<br>", INVESTIGATE_ATMOS)
 			. = TRUE
@@ -149,7 +152,6 @@
 				investigate_log("was set to [pump.target_pressure] kPa by [key_name(usr)].", INVESTIGATE_ATMOS)
 		if("eject")
 			if(holding)
-				holding.forceMove(drop_location())
-				holding = null
+				replace_tank(usr, FALSE)
 				. = TRUE
 	update_icon()

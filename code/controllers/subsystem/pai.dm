@@ -11,10 +11,10 @@ SUBSYSTEM_DEF(pai)
 /datum/controller/subsystem/pai/Topic(href, href_list[])
 	if(href_list["download"])
 		var/datum/paiCandidate/candidate = locate(href_list["candidate"]) in candidates
-		var/obj/item/device/paicard/card = locate(href_list["device"]) in pai_card_list
+		var/obj/item/paicard/card = locate(href_list["device"]) in pai_card_list
 		if(card.pai)
 			return
-		if(istype(card, /obj/item/device/paicard) && istype(candidate, /datum/paiCandidate))
+		if(istype(card, /obj/item/paicard) && istype(candidate, /datum/paiCandidate))
 			if(check_ready(candidate) != candidate)
 				return FALSE
 			var/mob/living/silicon/pai/pai = new(card)
@@ -39,19 +39,19 @@ SUBSYSTEM_DEF(pai)
 
 		switch(option)
 			if("name")
-				t = input("Enter a name for your pAI", "pAI Name", candidate.name) as text
+				t = input("Enter a name for your pAI", "pAI Name", candidate.name) as text|null
 				if(t)
-					candidate.name = copytext(sanitize(t),1,MAX_NAME_LEN)
+					candidate.name = copytext(sanitize_name(t),1,MAX_NAME_LEN)
 			if("desc")
-				t = input("Enter a description for your pAI", "pAI Description", candidate.description) as message
+				t = input("Enter a description for your pAI", "pAI Description", candidate.description) as message|null
 				if(t)
 					candidate.description = copytext(sanitize(t),1,MAX_MESSAGE_LEN)
 			if("role")
-				t = input("Enter a role for your pAI", "pAI Role", candidate.role) as text
+				t = input("Enter a role for your pAI", "pAI Role", candidate.role) as text|null
 				if(t)
 					candidate.role = copytext(sanitize(t),1,MAX_MESSAGE_LEN)
 			if("ooc")
-				t = input("Enter any OOC comments", "pAI OOC Comments", candidate.comments) as message
+				t = input("Enter any OOC comments", "pAI OOC Comments", candidate.comments) as message|null
 				if(t)
 					candidate.comments = copytext(sanitize(t),1,MAX_MESSAGE_LEN)
 			if("save")
@@ -71,7 +71,7 @@ SUBSYSTEM_DEF(pai)
 			if("submit")
 				if(candidate)
 					candidate.ready = 1
-					for(var/obj/item/device/paicard/p in pai_card_list)
+					for(var/obj/item/paicard/p in pai_card_list)
 						if(!p.pai)
 							p.alertUpdate()
 				usr << browse(null, "window=paiRecruit")
@@ -140,11 +140,11 @@ SUBSYSTEM_DEF(pai)
 			return C
 	return FALSE
 
-/datum/controller/subsystem/pai/proc/findPAI(obj/item/device/paicard/p, mob/user)
+/datum/controller/subsystem/pai/proc/findPAI(obj/item/paicard/p, mob/user)
 	if(!ghost_spam)
 		ghost_spam = TRUE
 		for(var/mob/dead/observer/G in GLOB.player_list)
-			if(!G.key || !G.client)
+			if(!G.key)
 				continue
 			if(!(ROLE_PAI in G.client.prefs.be_special))
 				continue

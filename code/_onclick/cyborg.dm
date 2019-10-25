@@ -6,7 +6,7 @@
 	adjacency code.
 */
 
-/mob/living/silicon/robot/ClickOn(var/atom/A, var/params)
+/mob/living/silicon/robot/ClickOn(atom/A, params)
 	if(world.time <= next_click)
 		return
 	next_click = world.time + 1
@@ -14,7 +14,7 @@
 	if(check_click_intercept(params,A))
 		return
 
-	if(stat || lockcharge || IsKnockdown() || IsStun() || IsUnconscious())
+	if(stat || lockcharge || IsParalyzed() || IsStun() || IsUnconscious())
 		return
 
 	var/list/modifiers = params2list(params)
@@ -87,8 +87,8 @@
 
 //Middle click cycles through selected modules.
 /mob/living/silicon/robot/MiddleClickOn(atom/A)
+	. = ..()
 	cycle_modules()
-	return
 
 //Give cyborgs hotkey clicks without breaking existing uses of hotkey clicks
 // for non-doors/apcs
@@ -101,7 +101,7 @@
 /mob/living/silicon/robot/AltClickOn(atom/A)
 	A.BorgAltClick(src)
 
-/atom/proc/BorgCtrlShiftClick(mob/living/silicon/robot/user) //forward to human click if not overriden
+/atom/proc/BorgCtrlShiftClick(mob/living/silicon/robot/user) //forward to human click if not overridden
 	CtrlShiftClick(user)
 
 /obj/machinery/door/airlock/BorgCtrlShiftClick(mob/living/silicon/robot/user) // Sets/Unsets Emergency Access Override Forwards to AI code.
@@ -111,7 +111,7 @@
 		..()
 
 
-/atom/proc/BorgShiftClick(mob/living/silicon/robot/user) //forward to human click if not overriden
+/atom/proc/BorgShiftClick(mob/living/silicon/robot/user) //forward to human click if not overridden
 	ShiftClick(user)
 
 /obj/machinery/door/airlock/BorgShiftClick(mob/living/silicon/robot/user)  // Opens and closes doors! Forwards to AI code.
@@ -121,7 +121,7 @@
 		..()
 
 
-/atom/proc/BorgCtrlClick(mob/living/silicon/robot/user) //forward to human click if not overriden
+/atom/proc/BorgCtrlClick(mob/living/silicon/robot/user) //forward to human click if not overridden
 	CtrlClick(user)
 
 /obj/machinery/door/airlock/BorgCtrlClick(mob/living/silicon/robot/user) // Bolts doors. Forwards to AI code.

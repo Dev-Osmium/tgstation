@@ -132,10 +132,10 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	timerid = QDEL_IN(src, lifetime)
 	chase_target(target)
 
-/obj/effect/meteor/Collide(atom/A)
+/obj/effect/meteor/Bump(atom/A)
 	if(A)
 		ram_turf(get_turf(A))
-		playsound(src.loc, meteorsound, 40, 1)
+		playsound(src.loc, meteorsound, 40, TRUE)
 		get_hit()
 
 /obj/effect/meteor/proc/ram_turf(turf/T)
@@ -165,9 +165,9 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	return
 
 /obj/effect/meteor/examine(mob/user)
-	if(!admin_spawned && isliving(user))
+	. = ..()
+	if(!(flags_1 & ADMIN_SPAWNED_1) && isliving(user))
 		SSmedals.UnlockMedal(MEDAL_METEOR, user.client)
-	..()
 
 /obj/effect/meteor/attackby(obj/item/I, mob/user, params)
 	if(I.tool_behaviour == TOOL_MINING)
@@ -212,7 +212,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	pass_flags = PASSTABLE | PASSGRILLE
 	hits = 1
 	hitpwr = 3
-	meteorsound = 'sound/weapons/gunshot_smg.ogg'
+	meteorsound = 'sound/weapons/gun/smg/shot.ogg'
 	meteordrop = list(/obj/item/stack/ore/glass)
 	threat = 1
 
@@ -301,7 +301,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	if(!isspaceturf(T))
 		new /obj/effect/decal/cleanable/blood(T)
 
-/obj/effect/meteor/meaty/Collide(atom/A)
+/obj/effect/meteor/meaty/Bump(atom/A)
 	A.ex_act(hitpwr)
 	get_hit()
 
@@ -340,7 +340,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	..()
 	explosion(src.loc, 5, 10, 15, 20, 0)
 
-/obj/effect/meteor/tunguska/Collide()
+/obj/effect/meteor/tunguska/Bump()
 	..()
 	if(prob(20))
 		explosion(src.loc,2,4,6,8)

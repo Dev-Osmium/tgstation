@@ -1,9 +1,8 @@
 /obj/machinery/jukebox
 	name = "jukebox"
-	desc = "A classic music player.."
+	desc = "A classic music player."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "jukebox"
-	anchored = TRUE
 	verb_say = "states"
 	density = TRUE
 	req_access = list(ACCESS_BAR)
@@ -44,12 +43,14 @@
 
 /obj/machinery/jukebox/Initialize()
 	. = ..()
-	var/list/tracks = flist("config/jukebox_music/sounds/")
+	var/list/tracks = flist("[global.config.directory]/jukebox_music/sounds/")
 
 	for(var/S in tracks)
 		var/datum/track/T = new()
-		T.song_path = file("config/jukebox_music/sounds/[S]")
+		T.song_path = file("[global.config.directory]/jukebox_music/sounds/[S]")
 		var/list/L = splittext(S,"+")
+		if(L.len != 3)
+			continue
 		T.song_name = L[1]
 		T.song_length = text2num(L[2])
 		T.song_beat = text2num(L[3])
@@ -64,14 +65,14 @@
 
 /obj/machinery/jukebox/attackby(obj/item/O, mob/user, params)
 	if(!active && !(flags_1 & NODECONSTRUCT_1))
-		if(istype(O, /obj/item/wrench))
+		if(O.tool_behaviour == TOOL_WRENCH)
 			if(!anchored && !isinspace())
 				to_chat(user,"<span class='notice'>You secure [src] to the floor.</span>")
-				anchored = TRUE
+				setAnchored(TRUE)
 			else if(anchored)
 				to_chat(user,"<span class='notice'>You unsecure and disconnect [src].</span>")
-				anchored = FALSE
-			playsound(src, 'sound/items/deconstruct.ogg', 50, 1)
+				setAnchored(FALSE)
+			playsound(src, 'sound/items/deconstruct.ogg', 50, TRUE)
 			return
 	return ..()
 
@@ -83,6 +84,8 @@
 
 /obj/machinery/jukebox/ui_interact(mob/user)
 	. = ..()
+	if(!user.canUseTopic(src, !issilicon(user)))
+		return
 	if (!anchored)
 		to_chat(user,"<span class='warning'>This device must be anchored by a wrench!</span>")
 		return
@@ -90,11 +93,9 @@
 		to_chat(user,"<span class='warning'>Error: Access Denied.</span>")
 		user.playsound_local(src,'sound/misc/compiler-failure.ogg', 25, 1)
 		return
-	if(!Adjacent(user) && !isAI(user))
-		return
 	if(!songs.len)
 		to_chat(user,"<span class='warning'>Error: No music tracks have been authorized for your station. Petition Central Command to resolve this issue.</span>")
-		playsound(src,'sound/misc/compiler-failure.ogg', 25, 1)
+		playsound(src,'sound/misc/compiler-failure.ogg', 25, TRUE)
 		return
 	var/list/dat = list()
 	dat +="<div class='statusDisplay' style='text-align:center'>"
@@ -119,7 +120,7 @@
 			if(!active)
 				if(stop > world.time)
 					to_chat(usr, "<span class='warning'>Error: The device is still resetting from the last activation, it will be ready again in [DisplayTimeText(stop-world.time)].</span>")
-					playsound(src, 'sound/misc/compiler-failure.ogg', 50, 1)
+					playsound(src, 'sound/misc/compiler-failure.ogg', 50, TRUE)
 					return
 				activate_music()
 				START_PROCESSING(SSobj, src)
@@ -135,7 +136,7 @@
 			var/list/available = list()
 			for(var/datum/track/S in songs)
 				available[S.song_name] = S
-			var/selected = input(usr, "Choose your song", "Track:") as null|anything in available
+			var/selected = input(usr, "Choose your song", "Track:") as null|anything in sortList(available)
 			if(QDELETED(src) || !selected || !istype(available[selected], /datum/track))
 				return
 			selection = available[selected]
@@ -156,56 +157,56 @@
 	var/turf/cen = get_turf(src)
 	FOR_DVIEW(var/turf/t, 3, get_turf(src),INVISIBILITY_LIGHTING)
 		if(t.x == cen.x && t.y > cen.y)
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_RED
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1+get_dist(src, L)
 			spotlights+=L
 			continue
 		if(t.x == cen.x && t.y < cen.y)
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_PURPLE
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1+get_dist(src, L)
 			spotlights+=L
 			continue
 		if(t.x > cen.x && t.y == cen.y)
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_YELLOW
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1+get_dist(src, L)
 			spotlights+=L
 			continue
 		if(t.x < cen.x && t.y == cen.y)
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_GREEN
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1+get_dist(src, L)
 			spotlights+=L
 			continue
 		if((t.x+1 == cen.x && t.y+1 == cen.y) || (t.x+2==cen.x && t.y+2 == cen.y))
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_ORANGE
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1.4+get_dist(src, L)
 			spotlights+=L
 			continue
 		if((t.x-1 == cen.x && t.y-1 == cen.y) || (t.x-2==cen.x && t.y-2 == cen.y))
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_CYAN
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1.4+get_dist(src, L)
 			spotlights+=L
 			continue
 		if((t.x-1 == cen.x && t.y+1 == cen.y) || (t.x-2==cen.x && t.y+2 == cen.y))
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_BLUEGREEN
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1.4+get_dist(src, L)
 			spotlights+=L
 			continue
 		if((t.x+1 == cen.x && t.y-1 == cen.y) || (t.x+2==cen.x && t.y-2 == cen.y))
-			var/obj/item/device/flashlight/spotlight/L = new /obj/item/device/flashlight/spotlight(t)
+			var/obj/item/flashlight/spotlight/L = new /obj/item/flashlight/spotlight(t)
 			L.light_color = LIGHT_COLOR_BLUE
 			L.light_power = 30-(get_dist(src,L)*8)
 			L.range = 1.4+get_dist(src, L)
@@ -230,11 +231,11 @@
 		sparkles += S
 		switch(i)
 			if(1 to 8)
-				S.orbit(src, 30, TRUE, 60, 36, TRUE, FALSE)
+				S.orbit(src, 30, TRUE, 60, 36, TRUE)
 			if(9 to 16)
-				S.orbit(src, 62, TRUE, 60, 36, TRUE, FALSE)
+				S.orbit(src, 62, TRUE, 60, 36, TRUE)
 			if(17 to 24)
-				S.orbit(src, 95, TRUE, 60, 36, TRUE, FALSE)
+				S.orbit(src, 95, TRUE, 60, 36, TRUE)
 			if(25)
 				S.pixel_y = 7
 				S.forceMove(get_turf(src))
@@ -244,7 +245,7 @@
 	for(var/obj/reveal in sparkles)
 		reveal.alpha = 255
 	while(active)
-		for(var/obj/item/device/flashlight/spotlight/glow in spotlights) // The multiples reflects custom adjustments to each colors after dozens of tests
+		for(var/obj/item/flashlight/spotlight/glow in spotlights) // The multiples reflects custom adjustments to each colors after dozens of tests
 			if(QDELETED(src) || !active || QDELETED(glow))
 				return
 			if(glow.light_color == LIGHT_COLOR_RED)
@@ -377,7 +378,7 @@
 		for(var/i in 1 to speed)
 			M.setDir(pick(GLOB.cardinals))
 			for(var/mob/living/carbon/NS in rangers)
-				NS.lay_down(TRUE)		//specifically excludes silicons to prevent pAI chat spam
+				NS.set_resting(!NS.resting, TRUE)
 		 time--
 
 /obj/machinery/jukebox/disco/proc/dance5(var/mob/living/M)
@@ -451,7 +452,7 @@
 		active = FALSE
 		STOP_PROCESSING(SSobj, src)
 		dance_over()
-		playsound(src,'sound/machines/terminal_off.ogg',50,1)
+		playsound(src,'sound/machines/terminal_off.ogg',50,TRUE)
 		update_icon()
 		stop = world.time + 100
 
@@ -460,5 +461,9 @@
 	. = ..()
 	if(active)
 		for(var/mob/M in rangers)
-			if(prob(5+(allowed(M)*4)) && M.canmove)
+			if(prob(5+(allowed(M)*4)))
+				if(isliving(M))
+					var/mob/living/L = M
+					if(!(L.mobility_flags & MOBILITY_MOVE))
+						continue
 				dance(M)

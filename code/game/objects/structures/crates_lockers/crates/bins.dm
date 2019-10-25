@@ -8,8 +8,8 @@
 	horizontal = FALSE
 	delivery_icon = null
 
-/obj/structure/closet/crate/bin/New()
-	..()
+/obj/structure/closet/crate/bin/Initialize()
+	. = ..()
 	update_icon()
 
 /obj/structure/closet/crate/bin/update_icon()
@@ -27,8 +27,7 @@
 		var/obj/item/storage/bag/trash/T = W
 		to_chat(user, "<span class='notice'>You fill the bag.</span>")
 		for(var/obj/item/O in src)
-			if(T.can_be_inserted(O, 1))
-				O.forceMove(T)
+			SEND_SIGNAL(T, COMSIG_TRY_STORAGE_INSERT, O, user, TRUE)
 		T.update_icon()
 		do_animate()
 		return TRUE
@@ -36,8 +35,8 @@
 		return ..()
 
 /obj/structure/closet/crate/bin/proc/do_animate()
-	playsound(loc, open_sound, 15, 1, -3)
+	playsound(loc, open_sound, 15, TRUE, -3)
 	flick("animate_largebins", src)
 	spawn(13)
-		playsound(loc, close_sound, 15, 1, -3)
+		playsound(loc, close_sound, 15, TRUE, -3)
 		update_icon()

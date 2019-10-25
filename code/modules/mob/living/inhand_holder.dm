@@ -5,7 +5,7 @@
 	desc = "Yell at coderbrush."
 	icon = null
 	icon_state = ""
-	flags_1 = DROPDEL_1
+	item_flags = DROPDEL
 	var/mob/living/held_mob
 	var/can_head = TRUE
 	var/destroying = FALSE
@@ -14,7 +14,7 @@
 	. = ..()
 	can_head = _can_head
 	if(head_icon)
-		alternate_worn_icon = head_icon
+		mob_overlay_icon = head_icon
 	if(_worn_state)
 		item_state = _worn_state
 	if(lh_icon)

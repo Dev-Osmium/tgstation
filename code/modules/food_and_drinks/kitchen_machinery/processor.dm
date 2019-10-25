@@ -6,7 +6,6 @@
 	icon_state = "processor1"
 	layer = BELOW_OBJ_LAYER
 	density = TRUE
-	anchored = TRUE
 	use_power = IDLE_POWER_USE
 	idle_power_usage = 5
 	active_power_usage = 50
@@ -21,6 +20,11 @@
 		rating_amount = B.rating
 	for(var/obj/item/stock_parts/manipulator/M in component_parts)
 		rating_speed = M.rating
+
+/obj/machinery/processor/examine(mob/user)
+	. = ..()
+	if(in_range(user, src) || isobserver(user))
+		. += "<span class='notice'>The status display reads: Outputting <b>[rating_amount]</b> item(s) at <b>[rating_speed*100]%</b> speed.</span>"
 
 /obj/machinery/processor/proc/process_food(datum/food_processor_process/recipe, atom/movable/what)
 	if (recipe.output && loc && !QDELETED(src))
@@ -46,9 +50,6 @@
 	if(default_deconstruction_screwdriver(user, "processor", "processor1", O))
 		return
 
-	if(exchange_parts(user, O))
-		return
-
 	if(default_pry_open(O))
 		return
 
@@ -64,8 +65,8 @@
 		for(var/obj/item/reagent_containers/food/snacks/S in T.contents)
 			var/datum/food_processor_process/P = select_recipe(S)
 			if(P)
-				T.remove_from_storage(S, src)
-				loaded++
+				if(SEND_SIGNAL(T, COMSIG_TRY_STORAGE_TAKE, S, src))
+					loaded++
 
 		if(loaded)
 			to_chat(user, "<span class='notice'>You insert [loaded] items into [src].</span>")
@@ -73,8 +74,8 @@
 
 	var/datum/food_processor_process/P = select_recipe(O)
 	if(P)
-		user.visible_message("[user] put [O] into [src].", \
-			"You put [O] into [src].")
+		user.visible_message("<span class='notice'>[user] put [O] into [src].</span>", \
+			"<span class='notice'>You put [O] into [src].</span>")
 		user.transferItemToLoc(O, src, TRUE)
 		return 1
 	else
@@ -101,16 +102,16 @@
 		to_chat(user, "<span class='warning'>[src] is empty!</span>")
 		return TRUE
 	processing = TRUE
-	user.visible_message("[user] turns on [src].", \
+	user.visible_message("<span class='notice'>[user] turns on [src].</span>", \
 		"<span class='notice'>You turn on [src].</span>", \
-		"<span class='italics'>You hear a food processor.</span>")
-	playsound(src.loc, 'sound/machines/blender.ogg', 50, 1)
+		"<span class='hear'>You hear a food processor.</span>")
+	playsound(src.loc, 'sound/machines/blender.ogg', 50, TRUE)
 	use_power(500)
 	var/total_time = 0
 	for(var/O in src.contents)
 		var/datum/food_processor_process/P = select_recipe(O)
 		if (!P)
-			log_admin("DEBUG: [O] in processor hasnt got a suitable recipe. How did it get in there? Please report it immediatly!!!")
+			log_admin("DEBUG: [O] in processor doesn't have a suitable recipe. How did it get in there? Please report it immediately!!!")
 			continue
 		total_time += P.time
 	var/offset = prob(50) ? -2 : 2
@@ -119,22 +120,29 @@
 	for(var/atom/movable/O in src.contents)
 		var/datum/food_processor_process/P = select_recipe(O)
 		if (!P)
-			log_admin("DEBUG: [O] in processor havent suitable recipe. How do you put it in?")
+			log_admin("DEBUG: [O] in processor doesn't have a suitable recipe. How do you put it in?")
 			continue
 		process_food(P, O)
 	pixel_x = initial(pixel_x) //return to its spot after shaking
 	processing = FALSE
-	visible_message("\The [src] finishes processing.")
+	visible_message("<span class='notice'>\The [src] finishes processing.</span>")
 
 /obj/machinery/processor/verb/eject()
 	set category = "Object"
 	set name = "Eject Contents"
 	set src in oview(1)
-
-	if(usr.stat || !usr.canmove || usr.restrained())
+	if(usr.stat || usr.restrained())
 		return
+	if(isliving(usr))
+		var/mob/living/L = usr
+		if(!(L.mobility_flags & MOBILITY_UI))
+			return
 	empty()
 	add_fingerprint(usr)
+
+/obj/machinery/processor/container_resist(mob/living/user)
+	user.forceMove(drop_location())
+	user.visible_message("<span class='notice'>[user] crawls free of the processor!</span>")
 
 /obj/machinery/processor/proc/empty()
 	for (var/obj/O in src)
@@ -182,7 +190,7 @@
 	if (!P)
 		return
 
-	visible_message("[picked_slime] is sucked into [src].")
+	visible_message("<span class='notice'>[picked_slime] is sucked into [src].</span>")
 	picked_slime.forceMove(src)
 
 /obj/machinery/processor/slime/process_food(datum/food_processor_process/recipe, atom/movable/what)

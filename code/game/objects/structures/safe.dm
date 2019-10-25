@@ -13,6 +13,7 @@ FLOOR SAFES
 	anchored = TRUE
 	density = TRUE
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
+	interaction_flags_atom = INTERACT_ATOM_ATTACK_HAND | INTERACT_ATOM_UI_INTERACT 
 	var/open = FALSE		//is the safe open?
 	var/tumbler_1_pos	//the tumbler position- from 0 to 72
 	var/tumbler_1_open	//the tumbler position to open at- 0 to 72
@@ -23,9 +24,8 @@ FLOOR SAFES
 	var/maxspace = 24	//the maximum combined w_class of stuff in the safe
 	var/explosion_count = 0	//Tough, but breakable
 
-
-/obj/structure/safe/New()
-	..()
+/obj/structure/safe/Initialize()
+	. = ..()
 	tumbler_1_pos = rand(0, 71)
 	tumbler_1_open = rand(0, 71)
 
@@ -52,15 +52,14 @@ FLOOR SAFES
 		return 1
 	if(user && canhear)
 		if(tumbler_1_pos == tumbler_1_open)
-			to_chat(user, "<span class='italics'>You hear a [pick("tonk", "krunk", "plunk")] from [src].</span>")
+			to_chat(user, "<span class='hear'>You hear a [pick("tonk", "krunk", "plunk")] from [src].</span>")
 		if(tumbler_2_pos == tumbler_2_open)
-			to_chat(user, "<span class='italics'>You hear a [pick("tink", "krink", "plink")] from [src].</span>")
+			to_chat(user, "<span class='hear'>You hear a [pick("tink", "krink", "plink")] from [src].</span>")
 	if(tumbler_1_pos == tumbler_1_open && tumbler_2_pos == tumbler_2_open)
 		if(user)
 			visible_message("<i><b>[pick("Spring", "Sprang", "Sproing", "Clunk", "Krunk")]!</b></i>")
 		return TRUE
 	return FALSE
-
 
 /obj/structure/safe/proc/decrement(num)
 	num -= 1
@@ -68,13 +67,11 @@ FLOOR SAFES
 		num = 71
 	return num
 
-
 /obj/structure/safe/proc/increment(num)
 	num += 1
 	if(num > 71)
 		num = 0
 	return num
-
 
 /obj/structure/safe/update_icon()
 	if(open)
@@ -82,11 +79,7 @@ FLOOR SAFES
 	else
 		icon_state = initial(icon_state)
 
-
-/obj/structure/safe/attack_hand(mob/user)
-	. = ..()
-	if(.)
-		return
+/obj/structure/safe/ui_interact(mob/user)
 	user.set_machine(src)
 	var/dat = "<center>"
 	dat += "<a href='?src=[REF(src)];open=1'>[open ? "Close" : "Open"] [src]</a> | <a href='?src=[REF(src)];decrement=1'>-</a> [dial] <a href='?src=[REF(src)];increment=1'>+</a>"
@@ -98,13 +91,12 @@ FLOOR SAFES
 		dat += "</table></center>"
 	user << browse("<html><head><title>[name]</title></head><body>[dat]</body></html>", "window=safe;size=350x300")
 
-
 /obj/structure/safe/Topic(href, href_list)
 	if(!ishuman(usr))
 		return
 	var/mob/living/carbon/human/user = usr
 
-	if(!user.canUseTopic(src))
+	if(!user.canUseTopic(src, BE_CLOSE))
 		return
 
 	var/canhear = FALSE
@@ -127,11 +119,11 @@ FLOOR SAFES
 		if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
 			tumbler_1_pos = decrement(tumbler_1_pos)
 			if(canhear)
-				to_chat(user, "<span class='italics'>You hear a [pick("clack", "scrape", "clank")] from [src].</span>")
+				to_chat(user, "<span class='hear'>You hear a [pick("clack", "scrape", "clank")] from [src].</span>")
 			if(tumbler_1_pos == tumbler_2_pos + 37 || tumbler_1_pos == tumbler_2_pos - 35)
 				tumbler_2_pos = decrement(tumbler_2_pos)
 				if(canhear)
-					to_chat(user, "<span class='italics'>You hear a [pick("click", "chink", "clink")] from [src].</span>")
+					to_chat(user, "<span class='hear'>You hear a [pick("click", "chink", "clink")] from [src].</span>")
 			check_unlocked(user, canhear)
 		updateUsrDialog()
 		return
@@ -141,11 +133,11 @@ FLOOR SAFES
 		if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
 			tumbler_1_pos = increment(tumbler_1_pos)
 			if(canhear)
-				to_chat(user, "<span class='italics'>You hear a [pick("clack", "scrape", "clank")] from [src].</span>")
+				to_chat(user, "<span class='hear'>You hear a [pick("clack", "scrape", "clank")] from [src].</span>")
 			if(tumbler_1_pos == tumbler_2_pos - 37 || tumbler_1_pos == tumbler_2_pos + 35)
 				tumbler_2_pos = increment(tumbler_2_pos)
 				if(canhear)
-					to_chat(user, "<span class='italics'>You hear a [pick("click", "chink", "clink")] from [src].</span>")
+					to_chat(user, "<span class='hear'>You hear a [pick("click", "chink", "clink")] from [src].</span>")
 			check_unlocked(user, canhear)
 		updateUsrDialog()
 		return

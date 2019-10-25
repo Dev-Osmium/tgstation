@@ -3,11 +3,8 @@
 // (
 
 #define NUM_E 2.71828183
-#define NUM_SQRT2 1.41421356
 
-#define PI						3.1415
-#define SPEED_OF_LIGHT			3e8		//not exact but hey!
-#define SPEED_OF_LIGHT_SQ		9e+16
+#define PI						3.1416
 #define INFINITY				1e31	//closer then enough
 
 #define SHORT_REAL_LIMIT 16777216
@@ -77,7 +74,7 @@
 #define ISINRANGE(val, min, max) (min <= val && val <= max)
 
 // Same as above, exclusive.
-#define ISINRANGE_EX(val, min, max) (min < val && val > max)
+#define ISINRANGE_EX(val, min, max) (min < val && val < max)
 
 #define ISINTEGER(x) (round(x) == x)
 
@@ -204,4 +201,10 @@
 
 	return list(region_x1 & region_x2, region_y1 & region_y2)
 
+#define EXP_DISTRIBUTION(desired_mean) ( -(1/(1/desired_mean)) * log(rand(1, 1000) * 0.001) )
+
+#define LORENTZ_DISTRIBUTION(x, s) ( s*TAN(TODEGREES(PI*(rand()-0.5))) + x )
+#define LORENTZ_CUMULATIVE_DISTRIBUTION(x, y, s) ( (1/PI)*TORADIANS(arctan((x-y)/s)) + 1/2 )
+
+#define RULE_OF_THREE(a, b, x) ((a*x)/b)
 // )

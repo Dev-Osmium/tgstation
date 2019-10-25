@@ -13,7 +13,7 @@
 
 /obj/item/grenade/syndieminibomb/concussion
 	name = "HE Grenade"
-	desc = "A compact shrapnel grenade meant to devestate nearby organisms and cause some damage in the process. Pull pin and throw opposite direction."
+	desc = "A compact shrapnel grenade meant to devastate nearby organisms and cause some damage in the process. Pull pin and throw opposite direction."
 	icon_state = "concussion"
 
 /obj/item/grenade/syndieminibomb/concussion/prime()
@@ -38,7 +38,7 @@
 
 /obj/item/grenade/gluon/prime()
 	update_mob()
-	playsound(loc, 'sound/effects/empulse.ogg', 50, 1)
+	playsound(loc, 'sound/effects/empulse.ogg', 50, TRUE)
 	radiation_pulse(src, rad_damage)
 	for(var/turf/T in view(freeze_range,loc))
 		if(isfloorturf(T))

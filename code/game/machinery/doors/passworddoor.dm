@@ -23,12 +23,13 @@
 		flags_1 |= HEAR_1
 
 /obj/machinery/door/password/Hear(message, atom/movable/speaker, message_language, raw_message, radio_freq, list/spans, message_mode)
+	. = ..()
 	if(!density || !voice_activated || radio_freq)
 		return
 	if(findtext(raw_message,password))
 		open()
 
-/obj/machinery/door/password/CollidedWith(atom/movable/AM)
+/obj/machinery/door/password/Bumped(atom/movable/AM)
 	return !density && ..()
 
 /obj/machinery/door/password/try_to_activate_door(mob/user)
@@ -51,13 +52,13 @@
 	switch(animation)
 		if("opening")
 			flick("opening", src)
-			playsound(src, 'sound/machines/blastdoor.ogg', 30, 1)
+			playsound(src, 'sound/machines/blastdoor.ogg', 30, TRUE)
 		if("closing")
 			flick("closing", src)
-			playsound(src, 'sound/machines/blastdoor.ogg', 30, 1)
+			playsound(src, 'sound/machines/blastdoor.ogg', 30, TRUE)
 		if("deny")
 			//Deny animation would be nice to have.
-			playsound(src, 'sound/machines/buzz-sigh.ogg', 30, 1)
+			playsound(src, 'sound/machines/buzz-sigh.ogg', 30, TRUE)
 
 /obj/machinery/door/password/proc/ask_for_pass(mob/user)
 	var/guess = stripped_input(user,"Enter the password:", "Password", "")
